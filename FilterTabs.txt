@@ -1,0 +1,41 @@
+import React from "react";
+import { motion } from "framer-motion";
+
+const filterOptions = [
+  { id: "all", label: "All", count: 0 },
+  { id: "active", label: "Active", count: 0 },
+  { id: "inactive", label: "Inactive", count: 0 },
+  { id: "streaming", label: "Streaming", count: 0 },
+  { id: "software", label: "Software", count: 0 },
+  { id: "music", label: "Music", count: 0 },
+  { id: "fitness", label: "Fitness", count: 0 },
+  { id: "productivity", label: "Productivity", count: 0 },
+  { id: "other", label: "Other", count: 0 }
+];
+
+export default function FilterTabs({ activeFilter, setActiveFilter }) {
+  return (
+    <div className="flex flex-wrap gap-2 mb-6">
+      {filterOptions.map((option) => (
+        <button
+          key={option.id}
+          onClick={() => setActiveFilter(option.id)}
+          className={`relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+            activeFilter === option.id
+              ? 'text-white bg-gradient-to-r from-purple-500 to-indigo-500 shadow-lg shadow-purple-500/25'
+              : 'text-slate-600 bg-slate-100 hover:bg-slate-200'
+          }`}
+        >
+          {option.label}
+          {activeFilter === option.id && (
+            <motion.div
+              layoutId="activeTab"
+              className="absolute inset-0 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-lg -z-10"
+              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+            />
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
