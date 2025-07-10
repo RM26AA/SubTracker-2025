@@ -1,0 +1,78 @@
+{
+  "name": "Subscription",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the subscription service"
+    },
+    "cost": {
+      "type": "number",
+      "description": "Cost amount"
+    },
+    "billing_cycle": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "yearly",
+        "weekly",
+        "quarterly"
+      ],
+      "default": "monthly",
+      "description": "How often the subscription renews"
+    },
+    "next_payment": {
+      "type": "string",
+      "format": "date",
+      "description": "Next payment due date"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "streaming",
+        "software",
+        "music",
+        "fitness",
+        "productivity",
+        "news",
+        "gaming",
+        "cloud_storage",
+        "other"
+      ],
+      "default": "other",
+      "description": "Category of the subscription"
+    },
+    "description": {
+      "type": "string",
+      "description": "Additional notes about the subscription"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the subscription is currently active"
+    },
+    "website": {
+      "type": "string",
+      "description": "Website URL of the service"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "credit_card",
+        "debit_card",
+        "paypal",
+        "bank_transfer",
+        "other"
+      ],
+      "default": "credit_card",
+      "description": "Payment method used"
+    }
+  },
+  "required": [
+    "name",
+    "cost",
+    "billing_cycle",
+    "next_payment",
+    "category"
+  ]
+}
