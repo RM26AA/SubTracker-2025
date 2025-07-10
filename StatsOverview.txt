@@ -1,0 +1,82 @@
+import React from "react";
+import { motion } from "framer-motion";
+import { TrendingUp, Calendar, DollarSign, Zap } from "lucide-react";
+
+const StatCard = ({ title, value, icon: Icon, color, trend, delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5, delay }}
+    className="bg-white rounded-2xl p-6 premium-shadow hover:shadow-lg transition-all duration-300"
+  >
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-slate-500 text-sm font-medium">{title}</p>
+        <p className="text-2xl font-bold text-slate-900 mt-1">{value}</p>
+        {trend && (
+          <p className="text-xs text-slate-400 mt-2">{trend}</p>
+        )}
+      </div>
+      <div className={`p-3 rounded-xl bg-gradient-to-br ${color} shadow-lg`}>
+        <Icon className="w-6 h-6 text-white" />
+      </div>
+    </div>
+  </motion.div>
+);
+
+export default function StatsOverview({ totalSubscriptions, totalMonthlySpend, upcomingRenewals, isLoading }) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {Array(4).fill(0).map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl p-6 premium-shadow animate-pulse">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="h-4 bg-slate-200 rounded w-2/3 mb-2"></div>
+                <div className="h-6 bg-slate-200 rounded w-1/2"></div>
+              </div>
+              <div className="w-12 h-12 bg-slate-200 rounded-xl"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <StatCard
+        title="Active Subscriptions"
+        value={totalSubscriptions}
+        icon={Zap}
+        color="from-purple-500 to-purple-600"
+        trend="All active services"
+        delay={0}
+      />
+      <StatCard
+        title="Monthly Spend"
+        value={`$${totalMonthlySpend.toFixed(2)}`}
+        icon={DollarSign}
+        color="from-indigo-500 to-indigo-600"
+        trend={`$${(totalMonthlySpend * 12).toFixed(2)} annually`}
+        delay={0.1}
+      />
+      <StatCard
+        title="Upcoming Renewals"
+        value={upcomingRenewals}
+        icon={Calendar}
+        color="from-green-500 to-green-600"
+        trend="Next 7 days"
+        delay={0.2}
+      />
+      <StatCard
+        title="Average Cost"
+        value={`$${totalSubscriptions > 0 ? (totalMonthlySpend / totalSubscriptions).toFixed(2) : '0.00'}`}
+        icon={TrendingUp}
+        color="from-orange-500 to-orange-600"
+        trend="Per subscription"
+        delay={0.3}
+      />
+    </div>
+  );
+}

@@ -1,0 +1,61 @@
+import React from "react";
+import { motion } from "framer-motion";
+import { Plus, BarChart3, Settings, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+
+const ActionCard = ({ title, description, icon: Icon, to, color, delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5, delay }}
+    whileHover={{ scale: 1.02 }}
+    whileTap={{ scale: 0.98 }}
+  >
+    <Link to={to} className="block">
+      <div className="bg-white rounded-xl p-6 premium-shadow hover:shadow-lg transition-all duration-300 border border-slate-200 hover:border-purple-300">
+        <div className="flex items-center gap-4">
+          <div className={`p-3 rounded-xl bg-gradient-to-br ${color} shadow-lg`}>
+            <Icon className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-slate-900">{title}</h3>
+            <p className="text-sm text-slate-500 mt-1">{description}</p>
+          </div>
+        </div>
+      </div>
+    </Link>
+  </motion.div>
+);
+
+export default function QuickActions() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+      className="space-y-6"
+    >
+      <h3 className="text-xl font-bold text-slate-900">Quick Actions</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ActionCard
+          title="Add Subscription"
+          description="Track a new recurring service"
+          icon={Plus}
+          to={createPageUrl("AddSubscription")}
+          color="from-purple-500 to-purple-600"
+          delay={0}
+        />
+        <ActionCard
+          title="View Analytics"
+          description="See detailed spending insights"
+          icon={BarChart3}
+          to={createPageUrl("Analytics")}
+          color="from-indigo-500 to-indigo-600"
+          delay={0.1}
+        />
+      </div>
+    </motion.div>
+  );
+}
