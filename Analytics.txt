@@ -1,0 +1,107 @@
+import React, { useState, useEffect } from "react";
+import { Subscription } from "@/entities/Subscription";
+import { motion } from "framer-motion";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { TrendingUp, DollarSign, Calendar, Target } from "lucide-react";
+
+import AnalyticsCard from "../components/analytics/AnalyticsCard";
+import SpendingTrends from "../components/analytics/SpendingTrends";
+import CategoryBreakdown from "../components/analytics/CategoryBreakdown";
+
+export default function Analytics() {
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadSubscriptions();
+  }, []);
+
+  const loadSubscriptions = async () => {
+    try {
+      const data = await Subscription.list();
+      setSubscriptions(data);
+    } catch (error) {
+      console.error("Error loading subscriptions:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const activeSubscriptions = subscriptions.filter(sub => sub.is_active);
+  
+  const totalMonthlySpend = activeSubscriptions.reduce((total, sub) => {
+    const monthlyCost = sub.billing_cycle === 'yearly' ? sub.cost / 12 : 
+                       sub.billing_cycle === 'quarterly' ? sub.cost / 3 :
+                       sub.billing_cycle === 'weekly' ? sub.cost * 4 : sub.cost;
+    return total + monthlyCost;
+  }, 0);
+
+  const totalYearlySpend = totalMonthlySpend * 12;
+
+  const categorySpending = activeSubscriptions.reduce((acc, sub) => {
+    const monthlyCost = sub.billing_cycle === 'yearly' ? sub.cost / 12 : 
+                       sub.billing_cycle === 'quarterly' ? sub.cost / 3 :
+                       sub.billing_cycle === 'weekly' ? sub.cost * 4 : sub.cost;
+    acc[sub.category] = (acc[sub.category] || 0) + monthlyCost;
+    return acc;
+  }, {});
+
+  const mostExpensiveCategory = Object.entries(categorySpending).reduce((max, [category, amount]) => 
+    amount > max.amount ? { category, amount } : max, { category: '', amount: 0 }
+  );
+
+  const avgSubscriptionCost = activeSubscriptions.length > 0 ? totalMonthlySpend / activeSubscriptions.length : 0;
+
+  return (
+    <div className="p-6 md:p-8 space-y-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
+          Analytics
+        </h1>
+        <p className="text-slate-600 mt-2">
+          Detailed insights into your subscription spending
+        </p>
+      </motion.div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <AnalyticsCard
+          title="Monthly Spend"
+          value={`$${totalMonthlySpend.toFixed(2)}`}
+          icon={DollarSign}
+          color="purple"
+          trend="+$23.45 from last month"
+        />
+        <AnalyticsCard
+          title="Yearly Projection"
+          value={`$${totalYearlySpend.toFixed(2)}`}
+          icon={TrendingUp}
+          color="indigo"
+          trend="Based on current subscriptions"
+        />
+        <AnalyticsCard
+          title="Average Cost"
+          value={`$${avgSubscriptionCost.toFixed(2)}`}
+          icon={Target}
+          color="green"
+          trend="Per subscription"
+        />
+        <AnalyticsCard
+          title="Top Category"
+          value={mostExpensiveCategory.category.replace('_', ' ') || 'N/A'}
+          icon={Calendar}
+          color="orange"
+          trend={`$${mostExpensiveCategory.amount.toFixed(2)}/month`}
+        />
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-8">
+        <SpendingTrends subscriptions={activeSubscriptions} />
+        <CategoryBreakdown subscriptions={activeSubscriptions} />
+      </div>
+    </div>
+  );
+}

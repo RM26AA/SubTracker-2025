@@ -1,0 +1,154 @@
+import React, { useState, useEffect } from "react";
+import { Subscription } from "@/entities/Subscription";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Filter, Plus, Edit } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+
+import SubscriptionCard from "../components/subscriptions/SubscriptionCard";
+import FilterTabs from "../components/subscriptions/FilterTabs";
+
+export default function Subscriptions() {
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [filteredSubscriptions, setFilteredSubscriptions] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadSubscriptions();
+  }, []);
+
+  useEffect(() => {
+    filterSubscriptions();
+  }, [subscriptions, searchTerm, activeFilter]);
+
+  const loadSubscriptions = async () => {
+    try {
+      const data = await Subscription.list("-created_date");
+      setSubscriptions(data);
+    } catch (error) {
+      console.error("Error loading subscriptions:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filterSubscriptions = () => {
+    let filtered = subscriptions;
+
+    if (activeFilter !== "all") {
+      if (activeFilter === "active") {
+        filtered = filtered.filter(sub => sub.is_active);
+      } else if (activeFilter === "inactive") {
+        filtered = filtered.filter(sub => !sub.is_active);
+      } else {
+        filtered = filtered.filter(sub => sub.category === activeFilter);
+      }
+    }
+
+    if (searchTerm) {
+      filtered = filtered.filter(sub => 
+        sub.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sub.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    setFilteredSubscriptions(filtered);
+  };
+
+  const handleToggleActive = async (subscription) => {
+    try {
+      await Subscription.update(subscription.id, {
+        ...subscription,
+        is_active: !subscription.is_active
+      });
+      loadSubscriptions();
+    } catch (error) {
+      console.error("Error updating subscription:", error);
+    }
+  };
+
+  return (
+    <div className="p-6 md:p-8 space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
+            Subscriptions
+          </h1>
+          <p className="text-slate-600 mt-2">
+            Manage all your recurring subscriptions
+          </p>
+        </motion.div>
+        
+        <Link to={createPageUrl("AddSubscription")}>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all duration-200 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Add Subscription
+          </motion.button>
+        </Link>
+      </div>
+
+      <div className="bg-white rounded-2xl p-6 premium-shadow">
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Input
+              placeholder="Search subscriptions..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 border-slate-200 focus:border-purple-500 focus:ring-purple-500/20"
+            />
+          </div>
+        </div>
+
+        <FilterTabs activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array(6).fill(0).map((_, i) => (
+                <div key={i} className="bg-slate-100 rounded-xl h-48 animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {filteredSubscriptions.map((subscription) => (
+                <SubscriptionCard
+                  key={subscription.id}
+                  subscription={subscription}
+                  onToggleActive={handleToggleActive}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {!isLoading && filteredSubscriptions.length === 0 && (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Filter className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">No subscriptions found</h3>
+            <p className="text-slate-500">Try adjusting your search or filter criteria</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

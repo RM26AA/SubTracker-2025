@@ -1,0 +1,95 @@
+import React, { useState, useEffect } from "react";
+import { Subscription } from "@/entities/Subscription";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { motion } from "framer-motion";
+import { TrendingUp, Calendar, DollarSign, Zap, Plus, AlertCircle } from "lucide-react";
+
+import StatsOverview from "../components/dashboard/StatsOverview";
+import UpcomingRenewals from "../components/dashboard/UpcomingRenewals";
+import SpendingChart from "../components/dashboard/SpendingChart";
+import QuickActions from "../components/dashboard/QuickActions";
+
+export default function Dashboard() {
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadSubscriptions();
+  }, []);
+
+  const loadSubscriptions = async () => {
+    try {
+      const data = await Subscription.list("-next_payment");
+      setSubscriptions(data);
+    } catch (error) {
+      console.error("Error loading subscriptions:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const activeSubscriptions = subscriptions.filter(sub => sub.is_active);
+  const totalMonthlySpend = activeSubscriptions.reduce((total, sub) => {
+    const monthlyCost = sub.billing_cycle === 'yearly' ? sub.cost / 12 : 
+                       sub.billing_cycle === 'quarterly' ? sub.cost / 3 :
+                       sub.billing_cycle === 'weekly' ? sub.cost * 4 : sub.cost;
+    return total + monthlyCost;
+  }, 0);
+
+  const upcomingRenewals = activeSubscriptions.filter(sub => {
+    const nextPayment = new Date(sub.next_payment);
+    const now = new Date();
+    const diffTime = nextPayment - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 7 && diffDays >= 0;
+  });
+
+  return (
+    <div className="p-6 md:p-8 space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
+            Dashboard
+          </h1>
+          <p className="text-slate-600 mt-2">
+            Track your subscriptions and spending at a glance
+          </p>
+        </motion.div>
+        
+        <Link to={createPageUrl("AddSubscription")}>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all duration-200 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Add Subscription
+          </motion.button>
+        </Link>
+      </div>
+
+      <StatsOverview 
+        totalSubscriptions={activeSubscriptions.length}
+        totalMonthlySpend={totalMonthlySpend}
+        upcomingRenewals={upcomingRenewals.length}
+        isLoading={isLoading}
+      />
+
+      <div className="grid lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          <SpendingChart subscriptions={activeSubscriptions} isLoading={isLoading} />
+          <QuickActions />
+        </div>
+
+        <div className="space-y-6">
+          <UpcomingRenewals subscriptions={upcomingRenewals} isLoading={isLoading} />
+        </div>
+      </div>
+    </div>
+  );
+}
